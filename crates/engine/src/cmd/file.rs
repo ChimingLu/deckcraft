@@ -4,7 +4,59 @@ use deckcraft_model::{Presentation, defaults};
 use serde_json::{Value, json};
 
 use super::*;
-use crate::{DocState, EngineError, Result, Session};
+use crate::{DocState, EngineError, Language, Result, Session};
+
+fn zh_prompt(kind: deckcraft_model::PhType) -> Option<&'static str> {
+    match kind {
+        deckcraft_model::PhType::Title | deckcraft_model::PhType::CtrTitle => Some("按一下以新增標題"),
+        deckcraft_model::PhType::SubTitle => Some("按一下以新增副標題"),
+        deckcraft_model::PhType::Body | deckcraft_model::PhType::Obj => Some("按一下以新增文字"),
+        deckcraft_model::PhType::Chart => Some("按一下圖示以新增圖表"),
+        deckcraft_model::PhType::Table => Some("按一下圖示以新增表格"),
+        deckcraft_model::PhType::Diagram => Some("按一下圖示以新增 SmartArt 圖形"),
+        deckcraft_model::PhType::Media => Some("按一下圖示以新增媒體"),
+        deckcraft_model::PhType::Picture | deckcraft_model::PhType::ClipArt => Some("按一下圖示以新增圖片"),
+        _ => None,
+    }
+}
+
+fn localize_shape_prompt(shape: &mut deckcraft_model::Shape, lang: Language) {
+    let Some(ph) = shape.ph.as_mut() else { return };
+    if lang != Language::traditional_chinese {
+        return;
+    }
+    let Some(text) = zh_prompt(ph.kind) else { return };
+    ph.has_custom_prompt = true;
+    // Keep the placeholder's body and list styles (a subtitle has no bullet); swap only the text.
+    let mut body = shape.text.take().unwrap_or_default();
+    let mut para = deckcraft_model::text::Paragraph::new(text);
+    if let Some(first) = body.paragraphs.first() {
+        para.level = first.level;
+        para.props = first.props.clone();
+        para.end_props = first.end_props.clone();
+    }
+    body.paragraphs = vec![para];
+    shape.text = Some(body);
+}
+
+/// Custom prompts on the masters and layouts; slides inherit them (their placeholders stay empty,
+/// so the prompt never becomes slide text).
+fn localize_placeholder_prompts(doc: &mut Presentation, lang: Language) {
+    if lang != Language::traditional_chinese {
+        return;
+    }
+    for master in &mut doc.masters {
+        let m = std::sync::Arc::make_mut(master);
+        for shape in &mut m.shapes {
+            localize_shape_prompt(shape, lang);
+        }
+        for layout in &mut m.layouts {
+            for shape in &mut layout.shapes {
+                localize_shape_prompt(shape, lang);
+            }
+        }
+    }
+}
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
@@ -48,7 +100,8 @@ fn new(s: &mut Session, p: &Value) -> Result<Value> {
         .and_then(|a| Some(deckcraft_geom::Size::new(a.first()?.as_f64()?, a.get(1)?.as_f64()?)))
         .filter(|s| s.width >= 1.0 && s.height >= 1.0 && s.width < 5000.0 && s.height < 5000.0)
         .unwrap_or(defaults::WIDE);
-    let doc = defaults::blank_presentation(size, theme, !bool_or(p, "blank", false));
+    let mut doc = defaults::blank_presentation(size, theme, !bool_or(p, "blank", false));
+    localize_placeholder_prompts(&mut doc, s.prefs.language);
     let title = s.next_untitled();
     let i = s.add_document(DocState::new(doc, None, title));
     Ok(json!({"document": i}))

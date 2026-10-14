@@ -1,11 +1,19 @@
 # Localization parity with PowerPoint
 
-> **Last reviewed:** 2026-10-10 · **Last updated:** 2026-10-10 · **Change:** major (created; string count measured from source, PowerPoint's localizations read from its bundle) · **Target:** Microsoft PowerPoint for Mac 16.113 (Microsoft 365)
+> **Last reviewed:** 2026-10-14 · **Last updated:** 2026-10-14 · **Change:** minor (Traditional Chinese UI and the language setting landed) · **Target:** Microsoft PowerPoint for Mac 16.113 (Microsoft 365)
 
-DeckCraft's interface is English only today: strings are literals in the UI and engine code, with
-no catalog and no language switch. Requests: #15 (follow the system language), #30 and PR #34
-(Ukrainian, open). Dimension score: **~8% ready** (estimated: English complete, slide-text script
-support partly there), **55–90 h** to parity plus native-speaker review.
+DeckCraft's interface ships in English and Traditional Chinese (Taiwan). English strings in the
+code are the keys; `crates/ui-egui/src/i18n/` holds one table per language (`zh_tw.rs`, ~1,000
+entries) and falls back to English for anything missing. Preferences ▸ Application language
+switches it live (`Prefs::language`, currently defaulting to Traditional Chinese); new
+presentations get localized placeholder prompts on their layouts and are named 簡報1, 簡報2…
+The Chinese interface draws CJK with an installed Traditional Chinese face (PingFang TC, Heiti TC,
+Microsoft JhengHei or WenQuanYi, read from the system, never bundled) before the Japanese UI face,
+which lacks characters such as 內 啟 說 閱; the web build has no system fonts and keeps the
+Japanese face. A UI test renders every ribbon
+tab, task pane and dialog in Chinese and fails if a string the table translates still draws in
+English. Not translated yet: engine status and error messages, and shape names such as "Title 1". Requests: #15 (follow the system language), #30 and PR #34 (Ukrainian, open).
+Dimension score: **~15% ready** (estimated), **50–85 h** to parity plus native-speaker review.
 
 ## How the numbers are measured
 
@@ -25,6 +33,7 @@ support partly there), **55–90 h** to parity plus native-speaker review.
 | Language | Code | UI strings translated | Dialogs / tooltips / help | Script support (slide text) | Native review | Status | PowerPoint for Mac UI | Hours to full |
 |---|---|---|---|---|---|---|---|---|
 | English | en | ~1,050 / ~1,050 (100%) | yes / yes / no help | full | yes | **full** | yes | 0 |
+| Traditional Chinese (Taiwan) | zh-Hant-TW | ~1,000 / ~1,050 (~90%, estimated) | yes / yes / no help | as Simplified Chinese below | no | **partial** | yes | 2–4 (engine messages, IME, review) |
 | Simplified Chinese (Mandarin) | zh-Hans | 0 (0%) | no | renders with system CJK fonts (asset policy excludes Noto CJK from builds); UAX #14 breaking; **no IME composition**; no true vertical layout | no | none | yes | 6–10 (incl. IME) |
 | Spanish | es | 0 (0%) | no | full (Latin) | no | none | yes (es, es-MX) | 3–5 |
 | Hindi | hi | 0 (0%) | no | Devanagari shaping through HarfRust, untested; no bundled Devanagari font | no | none | **no** (Windows only) | 4–7 |
@@ -37,9 +46,9 @@ support partly there), **55–90 h** to parity plus native-speaker review.
 | Korean | ko | 0 (0%) | no | system Hangul fonts; no IME composition | no | none | yes | 4–7 |
 | Vietnamese | vi | 0 (0%) | no | stacked diacritics through HarfRust | no | none | **no** (Windows only) | 3–5 |
 
-Other languages shipped: **0** (Ukrainian is in review as PR #34). PowerPoint for Mac ships 16 more
-than the twelve above: Czech, Danish, Greek, Finnish, Hebrew, Hungarian, Italian, Dutch, Norwegian,
-Polish, Russian, Slovak, Swedish, Thai, Turkish and Traditional Chinese.
+Other languages shipped: **Traditional Chinese** (Ukrainian is in review as PR #34). PowerPoint for
+Mac ships 16 more than the twelve above: Czech, Danish, Greek, Finnish, Hebrew, Hungarian, Italian,
+Dutch, Norwegian, Polish, Russian, Slovak, Swedish, Thai, Turkish and Traditional Chinese.
 
 Per-language hours assume the infrastructure exists: **8–14 h** once for a string catalog (copy a
 sibling app's approach, e.g. EffectCraft's menu and panel catalogs), a language setting that follows
@@ -56,4 +65,5 @@ common misspellings (`crates/engine/src/cmd/review.rs`); see [gaps.md](gaps.md#p
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-14 | minor | Traditional Chinese (Taiwan) UI: string table, live language setting, localized placeholder prompts, render test |
 | 2026-10-10 | major | Created: twelve-language table, ~1,050 UI strings measured, PowerPoint for Mac's 26 languages from its bundle |

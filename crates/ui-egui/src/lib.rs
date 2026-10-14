@@ -11,6 +11,7 @@ pub mod control;
 pub mod credits;
 pub mod dialogs;
 pub mod fillui;
+pub mod i18n;
 pub mod icons;
 pub mod media;
 pub mod menus;
@@ -199,6 +200,8 @@ pub struct SlideApp {
     queued_shots: Vec<(u64, f64, u32)>,
     pending_shots: Vec<(u64, Option<String>, Sender<ControlResponse>, f64)>,
     styled: bool,
+    /// The interface language the installed UI fonts were picked for.
+    fonts_language: Option<deckcraft_engine::Language>,
     restyle: bool,
     fonts_ready: bool,
     last_time: f64,
@@ -237,6 +240,7 @@ impl SlideApp {
             queued_shots: vec![],
             pending_shots: vec![],
             styled: false,
+            fonts_language: None,
             restyle: true,
             fonts_ready: false,
             last_time: 0.0,
@@ -418,7 +422,7 @@ impl SlideApp {
             if let Some(path) = pick(&suggested) {
                 match self.session.execute("file.saveAs", &json!({"path": path})) {
                     Ok(_) => {
-                        self.set_status(format!("Saved {path}"));
+                        self.set_status(format!("{} {path}", crate::i18n::t("Saved")));
                         self.ui.recent.retain(|p| *p != path);
                         self.ui.recent.insert(0, path);
                     }
@@ -452,7 +456,7 @@ impl SlideApp {
     pub fn save(&mut self) {
         if self.session.active().and_then(|d| d.path.clone()).is_some() {
             match self.session.execute("file.save", &json!({})) {
-                Ok(_) => self.set_status("Saved"),
+                Ok(_) => self.set_status(crate::i18n::t("Saved")),
                 Err(e) => self.set_status(e.to_string()),
             }
         } else {
@@ -516,7 +520,7 @@ impl SlideApp {
         } else if lower.ends_with(".txt") || lower.ends_with(".md") {
             "slide.fromOutline"
         } else {
-            self.set_status(format!("{name}: DeckCraft can't open this kind of file"));
+            self.set_status(format!("{name}: {}", crate::i18n::t("DeckCraft can't open this kind of file")));
             return;
         };
         let p = if cmd == "slide.fromOutline" { json!({"text": String::from_utf8_lossy(bytes)}) } else { json!({"name": name, "data": data}) };
@@ -530,6 +534,12 @@ impl SlideApp {
 
     /// Per-frame logic before layout: styles, control requests, screenshots, shortcuts.
     pub fn logic(&mut self, ctx: &egui::Context) {
+        i18n::set_language(self.session.prefs.language);
+        if self.fonts_language != Some(self.session.prefs.language) {
+            // Each language brings its own UI faces; install them again when it changes.
+            self.fonts_language = Some(self.session.prefs.language);
+            self.styled = false;
+        }
         let scale = self.ui.ui_scale.clamp(0.5, 3.0);
         if (ctx.zoom_factor() - scale).abs() > 1e-3 {
             ctx.set_zoom_factor(scale);
@@ -574,7 +584,7 @@ impl SlideApp {
             if self.session.documents().iter().any(|d| d.is_dirty())
                 && let Err(e) = self.session.execute("file.recovery.save", &json!({}))
             {
-                self.set_status(format!("Couldn't save AutoRecover information: {e}"));
+                self.set_status(format!("{}: {e}", crate::i18n::t("Couldn't save AutoRecover information")));
             }
         }
         // On the web, dropped files can only be read asynchronously: the host reads them and
@@ -930,6 +940,79 @@ mod tests {
         harness.run_steps(2);
         assert!(!harness.state().home_open(), "a new presentation leaves Home");
         assert_eq!(harness.state().session.documents().len(), 2);
+    }
+
+    fn painted_text(shapes: &[egui::epaint::ClippedShape]) -> Vec<String> {
+        fn walk(s: &egui::Shape, out: &mut Vec<String>) {
+            match s {
+                egui::Shape::Text(t) => out.push(t.galley.job.text.clone()),
+                egui::Shape::Vec(v) => v.iter().for_each(|s| walk(s, out)),
+                _ => {}
+            }
+        }
+        let mut out = Vec::new();
+        for c in shapes {
+            walk(&c.shape, &mut out);
+        }
+        out
+    }
+
+    /// In Traditional Chinese, every ribbon tab and task pane draws its labels translated (English
+    /// words left over are proper names, file formats or sample content).
+    #[test]
+    fn traditional_chinese_ribbon_and_panes_have_no_english_labels() {
+        let mut session = Session::with_new();
+        session.prefs.language = deckcraft_engine::Language::traditional_chinese;
+        let mut harness = egui_kittest::Harness::builder().with_size(egui::vec2(1800.0, 1000.0)).build_ui_state(
+            |ui, app: &mut SlideApp| {
+                app.logic(ui.ctx());
+                app.ui(ui);
+            },
+            SlideApp::new(session, Services::default()),
+        );
+        harness.run_steps(2);
+        let mut seen = std::collections::BTreeSet::new();
+        let collect = |h: &mut egui_kittest::Harness<'_, SlideApp>, seen: &mut std::collections::BTreeSet<String>| {
+            h.run_steps(2);
+            for s in painted_text(&h.output().shapes) {
+                seen.insert(s);
+            }
+        };
+        let panes = ["format", "animation", "selection", "comments", "designer", "background"];
+        for (i, tab) in ribbon::TABS.iter().enumerate() {
+            harness.state_mut().ui.tab = tab.to_string();
+            harness.state_mut().ui.pane = panes.get(i % panes.len()).map(|p| p.to_string());
+            collect(&mut harness, &mut seen);
+        }
+        for id in [
+            "table",
+            "slideSize",
+            "headerFooter",
+            "hyperlink",
+            "setupShow",
+            "zoom",
+            "altText",
+            "outline",
+            "paragraph",
+            "preferences",
+            "export",
+            "symbol",
+            "equation",
+            "language",
+            "customShow",
+            "trim",
+            "smartart",
+            "about",
+        ] {
+            harness.state_mut().dialog = Some(dialogs::Dialog::new(id));
+            collect(&mut harness, &mut seen);
+        }
+        harness.state_mut().dialog = None;
+        // A string the table translates but that still drew in English missed its `i18n::t` call.
+        let untranslated: Vec<&String> =
+            seen.iter().filter(|s| i18n::translate(deckcraft_engine::Language::traditional_chinese, s) != s.as_str()).collect();
+        assert!(untranslated.is_empty(), "drawn in English: {untranslated:?}");
+        assert!(seen.iter().any(|s| s == "首頁") && seen.iter().any(|s| s == "新增投影片"), "the ribbon draws in Chinese");
     }
 
     #[test]
