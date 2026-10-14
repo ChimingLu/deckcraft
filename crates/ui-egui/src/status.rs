@@ -15,8 +15,15 @@ pub fn status_bar(app: &mut SlideApp, ui: &mut Ui) {
         let Some(st) = app.session.active() else { return };
         let n = st.doc.slides.len();
         let left = match st.selection.target {
-            deckcraft_engine::Target::Slides => format!("{} {} / {}", crate::i18n::text(app.session.prefs.language, "Slide", "投影片"), (st.selection.slide + 1).min(n.max(1)), n),
-            _ => crate::i18n::text(app.session.prefs.language, "Slide Master", "投影片母片").to_string(),
+            deckcraft_engine::Target::Slides => {
+                format!(
+                    "{} {} / {}",
+                    crate::i18n::text(app.session.prefs.language, crate::i18n::t("Slide"), "投影片"),
+                    (st.selection.slide + 1).min(n.max(1)),
+                    n
+                )
+            }
+            _ => crate::i18n::text(app.session.prefs.language, crate::i18n::t("Slide Master"), "投影片母片").to_string(),
         };
         let p = ui.painter();
         p.text(pos2(rect.min.x + 14.0, rect.center().y), Align2::LEFT_CENTER, &left, theme::font(12.0), t.text_dim);
@@ -37,7 +44,14 @@ pub fn status_bar(app: &mut SlideApp, ui: &mut Ui) {
                 .layout(egui::Layout::right_to_left(egui::Align::Center)),
         );
         right.spacing_mut().item_spacing.x = 4.0;
-        if small_icon(&mut right, Icon::FitSmall, crate::i18n::text(app.session.prefs.language, "Fit slide to current window", "適合目前視窗"), false).clicked() {
+        if small_icon(
+            &mut right,
+            Icon::FitSmall,
+            crate::i18n::text(app.session.prefs.language, crate::i18n::t("Fit slide to current window"), "適合目前視窗"),
+            false,
+        )
+        .clicked()
+        {
             app.ui.zoom = None;
         }
         let pct = (app.ui.zoom.unwrap_or(app.canvas_scale) * 100.0).round();
@@ -45,7 +59,7 @@ pub fn status_bar(app: &mut SlideApp, ui: &mut Ui) {
         if lbl.clicked() {
             app.dialog = Some(crate::dialogs::Dialog::new("zoom"));
         }
-        if small_icon(&mut right, Icon::ZoomIn, crate::i18n::text(app.session.prefs.language, "Zoom In", "放大"), false).clicked() {
+        if small_icon(&mut right, Icon::ZoomIn, crate::i18n::text(app.session.prefs.language, crate::i18n::t("Zoom In"), "放大"), false).clicked() {
             let _ = app.run("view.zoomIn", json!({}));
         }
         // Slider 10%–400% (log scale).
@@ -56,31 +70,61 @@ pub fn status_bar(app: &mut SlideApp, ui: &mut Ui) {
             z = lz.exp();
             app.ui.zoom = Some(z);
         }
-        if small_icon(&mut right, Icon::ZoomOut, crate::i18n::text(app.session.prefs.language, "Zoom Out", "縮小"), false).clicked() {
+        if small_icon(&mut right, Icon::ZoomOut, crate::i18n::text(app.session.prefs.language, crate::i18n::t("Zoom Out"), "縮小"), false).clicked()
+        {
             let _ = app.run("view.zoomOut", json!({}));
         }
         right.add_space(8.0);
         let view = app.ui.view;
-        if small_icon(&mut right, Icon::ViewShowSmall, crate::i18n::text(app.session.prefs.language, "Slide Show", "投影片放映"), false).clicked() {
+        if small_icon(
+            &mut right,
+            Icon::ViewShowSmall,
+            crate::i18n::text(app.session.prefs.language, crate::i18n::t("Slide Show"), "投影片放映"),
+            false,
+        )
+        .clicked()
+        {
             let i = app.session.active().map(|d| d.selection.slide).unwrap_or(0);
             app.start_show(i, false);
         }
-        if small_icon(&mut right, Icon::ViewReadingSmall, crate::i18n::text(app.session.prefs.language, "Reading View", "閱讀檢視"), false).clicked() {
+        if small_icon(
+            &mut right,
+            Icon::ViewReadingSmall,
+            crate::i18n::text(app.session.prefs.language, crate::i18n::t("Reading View"), "閱讀檢視"),
+            false,
+        )
+        .clicked()
+        {
             let _ = app.run("view.reading", json!({}));
         }
-        if small_icon(&mut right, Icon::ViewSorterSmall, crate::i18n::text(app.session.prefs.language, "Slide Sorter", "投影片總覽"), view == ViewMode::Sorter).clicked() {
+        if small_icon(
+            &mut right,
+            Icon::ViewSorterSmall,
+            crate::i18n::text(app.session.prefs.language, crate::i18n::t("Slide Sorter"), "投影片總覽"),
+            view == ViewMode::Sorter,
+        )
+        .clicked()
+        {
             app.ui.view = ViewMode::Sorter;
         }
-        if small_icon(&mut right, Icon::ViewNormalSmall, crate::i18n::text(app.session.prefs.language, "Normal", "一般"), view == ViewMode::Normal).clicked() {
+        if small_icon(
+            &mut right,
+            Icon::ViewNormalSmall,
+            crate::i18n::text(app.session.prefs.language, crate::i18n::t("Normal"), "一般"),
+            view == ViewMode::Normal,
+        )
+        .clicked()
+        {
             app.ui.view = ViewMode::Normal;
         }
         right.add_space(8.0);
         let c_on = app.ui.pane.as_deref() == Some("comments");
-        if labeled(&mut right, Icon::CommentsSmall, crate::i18n::text(app.session.prefs.language, "Comments", "留言"), c_on).clicked() {
+        if labeled(&mut right, Icon::CommentsSmall, crate::i18n::text(app.session.prefs.language, crate::i18n::t("Comments"), "留言"), c_on).clicked()
+        {
             let _ = app.run("view.pane", json!({"pane": "comments", "toggle": true}));
         }
         let n_on = app.ui.notes;
-        if labeled(&mut right, Icon::NotesSmall, crate::i18n::text(app.session.prefs.language, "Notes", "筆記"), n_on).clicked() {
+        if labeled(&mut right, Icon::NotesSmall, crate::i18n::text(app.session.prefs.language, crate::i18n::t("Notes"), "筆記"), n_on).clicked() {
             app.ui.notes = !n_on;
         }
         let _ = Stroke::NONE;
@@ -94,10 +138,11 @@ fn small_icon(ui: &mut Ui, icon: Icon, tip: &str, on: bool) -> egui::Response {
         ui.painter().rect_filled(r, CornerRadius::same(4), if on { t.selected } else { t.hover });
     }
     icons::paint(ui.painter(), Rect::from_center_size(r.center(), vec2(16.0, 16.0)), icon, t.text_dim, false);
-    resp.on_hover_text(tip)
+    resp.on_hover_text(crate::i18n::t(tip))
 }
 
 fn labeled(ui: &mut Ui, icon: Icon, label: &str, on: bool) -> egui::Response {
+    let label = crate::i18n::t(label);
     let t = Tokens::get(ui.ctx());
     let w = 22.0 + ui.fonts_mut(|f| f.layout_no_wrap(label.into(), theme::font(12.0), t.text).size().x) + 8.0;
     let (r, resp) = ui.allocate_exact_size(vec2(w, 20.0), Sense::click());
@@ -142,7 +187,7 @@ pub fn notes_pane(app: &mut SlideApp, ui: &mut Ui) {
             let r = ui.add(
                 egui::TextEdit::multiline(&mut buf)
                     .id(id)
-                    .hint_text(crate::i18n::text(app.session.prefs.language, "Click to add notes", "點擊新增筆記"))
+                    .hint_text(crate::i18n::text(app.session.prefs.language, crate::i18n::t("Click to add notes"), "點擊新增筆記"))
                     .frame(egui::Frame::NONE)
                     .desired_width(f32::INFINITY)
                     .desired_rows(2)

@@ -30,6 +30,8 @@ fn localize_shape_prompt(shape: &mut deckcraft_model::Shape, lang: Language) {
     shape.text = Some(deckcraft_model::TextBody::from_text(text));
 }
 
+/// Custom prompts on the masters and layouts; slides inherit them (their placeholders stay empty,
+/// so the prompt never becomes slide text).
 fn localize_placeholder_prompts(doc: &mut Presentation, lang: Language) {
     if lang != Language::traditional_chinese {
         return;
@@ -43,12 +45,6 @@ fn localize_placeholder_prompts(doc: &mut Presentation, lang: Language) {
             for shape in &mut layout.shapes {
                 localize_shape_prompt(shape, lang);
             }
-        }
-    }
-    for slide in &mut doc.slides {
-        let sl = std::sync::Arc::make_mut(slide);
-        for shape in &mut sl.shapes {
-            localize_shape_prompt(shape, lang);
         }
     }
 }

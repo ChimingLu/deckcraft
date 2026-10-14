@@ -74,8 +74,7 @@ pub fn open_sample(s: &mut Session) -> Result<()> {
         }
         prev = Some(id);
     }
-    let cap =
-        run(s, "insert.textBox", json!({"rect": [60, 380, 840, 60], "text": "氧原子會發出綠色與紅色；氮則帶來藍色與紫色邊緣。"}))?;
+    let cap = run(s, "insert.textBox", json!({"rect": [60, 380, 840, 60], "text": "氧原子會發出綠色與紅色；氮則帶來藍色與紫色邊緣。"}))?;
     run(s, "edit.select", json!({"ids": [last_id(&cap)]}))?;
     run(s, "format.alignCenter", json!({}))?;
     run(s, "format.size", json!({"size": 20}))?;
@@ -106,11 +105,7 @@ pub fn open_sample(s: &mut Session) -> Result<()> {
     let (l, r) =
         st.current_slide().map(|x| (x.shapes.get(1).map(|s| s.id.0).unwrap_or(0), x.shapes.get(2).map(|s| s.id.0).unwrap_or(0))).unwrap_or((0, 0));
     run(s, "text.set", json!({"id": l, "text": "帶上\n\t三腳架與備用電池\n\t紅光模式頭燈\n\t保暖衣物與保溫瓶"}))?;
-    run(
-        s,
-        "text.set",
-        json!({"id": r, "text": "記得\n\t查看天氣預報與雲層狀況\n\t讓眼睛適應 20 分鐘\n\t留下痕跡不要留下垃圾"}),
-    )?;
+    run(s, "text.set", json!({"id": r, "text": "記得\n\t查看天氣預報與雲層狀況\n\t讓眼睛適應 20 分鐘\n\t留下痕跡不要留下垃圾"}))?;
     run(s, "transition.set", json!({"kind": "split"}))?;
 
     // Closing.

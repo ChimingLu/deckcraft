@@ -1,6 +1,6 @@
 # Where DeckCraft falls short of PowerPoint
 
-> **Last reviewed:** 2026-10-10 · **Last updated:** 2026-10-10 · **Change:** minor (core-workflow alpha gate added; stage stays alpha; previous: major, first itemized gap list; full re-measure against PowerPoint for Mac 16.113.4 and the open GitHub issues) · **Target:** Microsoft PowerPoint for Mac 16.113 (Microsoft 365)
+> **Last reviewed:** 2026-10-10 · **Last updated:** 2026-10-14 · **Change:** minor (localization gap updated for Traditional Chinese; previous: minor, core-workflow alpha gate added; before that: major, first itemized gap list; full re-measure against PowerPoint for Mac 16.113.4 and the open GitHub issues) · **Target:** Microsoft PowerPoint for Mac 16.113 (Microsoft 365)
 
 Every known shortfall, one entry each, ranked by how much it stops someone who presents with
 PowerPoint from switching. This is the work list: pick from the top. Numbers are summarized in
@@ -218,9 +218,10 @@ Detail in [hardware-parity.md](hardware-parity.md).
 
 Detail in [localization-parity.md](localization-parity.md).
 
-- **English only, no string catalog** (#15, #30; Ukrainian PR #34 open). PowerPoint for Mac ships
-  26 languages. Infrastructure 8–14 h, then 3–16 h per language plus native review. Beta needs the
-  infrastructure and at least Simplified Chinese, Spanish, French, German and Japanese (~30–45 h).
+- **Two interface languages** (English, Traditional Chinese; #15, #30; Ukrainian PR #34 open).
+  PowerPoint for Mac ships 26. The string tables are in place; each language is 3–16 h plus native
+  review. Beta needs at least Simplified Chinese, Spanish, French, German and Japanese (~25–40 h).
+  Engine status and error messages are still English in every language.
 - **No IME composition in text editing** (CJK input). 3–6 h.
 - **UI isn't mirrored for right-to-left languages.** 6–10 h.
 - **Browser build draws Arabic and Hebrew as missing-glyph boxes in exports** (#81). 1–2 h.
