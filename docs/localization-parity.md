@@ -6,10 +6,13 @@ DeckCraft's interface ships in English and Traditional Chinese (Taiwan). English
 code are the keys; `crates/ui-egui/src/i18n/` holds one table per language (`zh_tw.rs`, ~1,000
 entries) and falls back to English for anything missing. Preferences ▸ Application language
 switches it live (`Prefs::language`, currently defaulting to Traditional Chinese); new
-presentations get localized placeholder prompts on their layouts. A UI test renders every ribbon
+presentations get localized placeholder prompts on their layouts and are named 簡報1, 簡報2…
+The Chinese interface draws CJK with an installed Traditional Chinese face (PingFang TC, Heiti TC,
+Microsoft JhengHei or WenQuanYi, read from the system, never bundled) before the Japanese UI face,
+which lacks characters such as 內 啟 說 閱; the web build has no system fonts and keeps the
+Japanese face. A UI test renders every ribbon
 tab, task pane and dialog in Chinese and fails if a string the table translates still draws in
-English. Not translated yet: engine status and error messages, and command labels that only exist
-as `format!` text. Requests: #15 (follow the system language), #30 and PR #34 (Ukrainian, open).
+English. Not translated yet: engine status and error messages, and shape names such as "Title 1". Requests: #15 (follow the system language), #30 and PR #34 (Ukrainian, open).
 Dimension score: **~15% ready** (estimated), **50–85 h** to parity plus native-speaker review.
 
 ## How the numbers are measured

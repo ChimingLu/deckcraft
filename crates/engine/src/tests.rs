@@ -569,3 +569,12 @@ fn localized_prompts_keep_layout_formatting() {
     }
     assert!(checked > 5);
 }
+
+#[test]
+fn untitled_presentations_are_named_in_the_interface_language() {
+    let mut s = Session::new();
+    s.prefs.language = crate::Language::traditional_chinese;
+    assert_eq!(s.next_untitled(), "簡報1");
+    s.prefs.language = crate::Language::english;
+    assert_eq!(s.next_untitled(), "Presentation2");
+}

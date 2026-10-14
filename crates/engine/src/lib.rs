@@ -398,7 +398,10 @@ impl Session {
     }
     pub fn next_untitled(&mut self) -> String {
         self.untitled += 1;
-        format!("Presentation{}", self.untitled)
+        match self.prefs.language {
+            Language::traditional_chinese => format!("簡報{}", self.untitled),
+            Language::english => format!("Presentation{}", self.untitled),
+        }
     }
 
     /// Run command `id`. A panic inside it becomes [`EngineError::Internal`] and leaves the
