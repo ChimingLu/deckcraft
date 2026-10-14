@@ -21,13 +21,13 @@ pub fn show(app: &mut SlideApp, ui: &mut Ui) {
         .show(ui, |ui| {
             app.ui.pane_width = ui.available_width() + 20.0;
             let title = match pane.as_str() {
-                "format" => "Format Shape",
-                "background" => "Format Background",
-                "animation" => "Animation Pane",
-                "selection" => "Selection",
-                "comments" => "Comments",
-                "designer" => "Design Ideas",
-                _ => "Pane",
+                "format" => crate::i18n::tr(app, "Format Shape", "設定形狀格式"),
+                "background" => crate::i18n::tr(app, "Format Background", "設定背景格式"),
+                "animation" => crate::i18n::tr(app, "Animation Pane", "動畫窗格"),
+                "selection" => crate::i18n::tr(app, "Selection", "選取"),
+                "comments" => crate::i18n::tr(app, "Comments", "留言"),
+                "designer" => crate::i18n::tr(app, "Design Ideas", "設計想法"),
+                _ => crate::i18n::tr(app, "Pane", "窗格"),
             };
             ui.horizontal(|ui| {
                 ui.label(egui::RichText::new(title).font(theme::bold(16.0)));
@@ -89,17 +89,17 @@ fn format_shape(app: &mut SlideApp, ui: &mut Ui) {
     let t = Tokens::get(ui.ctx());
     let Some(st) = app.session.active() else { return };
     let Some(sh) = st.selected_shapes().first().map(|s| (*s).clone()) else {
-        ui.label(egui::RichText::new("Select a shape to format it.").color(t.text_dim));
+        ui.label(egui::RichText::new(crate::i18n::tr(app, "Select a shape to format it.", "選取一個形狀來格式化。")).color(t.text_dim));
         return;
     };
     let x = deckcraft_engine::cmd::xfrm_of(&st.doc, &st.selection, &sh);
     // Tabs as icons.
     ui.horizontal(|ui| {
         for (tab, icon, tip) in [
-            ("fill", Icon::ShapeFill, "Fill & Line"),
-            ("effects", Icon::ShapeEffects, "Effects"),
-            ("size", Icon::SlideSize, "Size & Properties"),
-            ("text", Icon::TextBox, "Text Options"),
+            ("fill", Icon::ShapeFill, crate::i18n::tr(app, "Fill & Line", "填滿與線條")),
+            ("effects", Icon::ShapeEffects, crate::i18n::tr(app, "Effects", "效果")),
+            ("size", Icon::SlideSize, crate::i18n::tr(app, "Size & Properties", "大小與屬性")),
+            ("text", Icon::TextBox, crate::i18n::tr(app, "Text Options", "文字選項")),
         ] {
             let on = app.ui.format_tab == tab;
             if widgets::icon_toggle(ui, icon, tip, true, on).clicked() {

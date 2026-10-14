@@ -202,6 +202,15 @@ pub fn shapes_mut<'a>(doc: &'a mut Presentation, sel: &Selection) -> Option<&'a 
     }
 }
 
+#[allow(non_camel_case_types)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Language {
+    #[default]
+    english,
+    traditional_chinese,
+}
+
 /// Engine preferences (the UI keeps its own).
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
@@ -214,6 +223,7 @@ pub struct Prefs {
     pub autocorrect: bool,
     pub smart_quotes: bool,
     pub author: String,
+    pub language: Language,
     pub undo_limit: usize,
     /// Minutes between AutoRecover saves of unsaved presentations.
     pub recovery_minutes: f64,
@@ -229,6 +239,7 @@ impl Default for Prefs {
             autocorrect: true,
             smart_quotes: true,
             author: "Presenter".into(),
+            language: Language::traditional_chinese,
             undo_limit: 500,
             recovery_minutes: 1.0,
         }

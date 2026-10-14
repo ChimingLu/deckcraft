@@ -159,7 +159,7 @@ pub fn install_fonts(ctx: &egui::Context) {
     let mut names = vec![];
     for (i, f) in deckcraft_fonts::CRAFT_FONTS.iter().enumerate() {
         let wanted = (f.family == "Inter" && (f.style == "Regular" || f.style == "SemiBold" || f.style == "Bold"))
-            || (f.family == "BIZ UDPGothic" && f.style == "Regular")
+            || (f.family == "BIZ UDPGothic" && matches!(f.style, "Regular" | "Bold"))
             || (f.family == "Noto Sans Arabic");
         if !wanted {
             continue;

@@ -11,6 +11,7 @@ pub mod control;
 pub mod credits;
 pub mod dialogs;
 pub mod fillui;
+pub mod i18n;
 pub mod icons;
 pub mod media;
 pub mod menus;
