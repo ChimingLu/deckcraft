@@ -543,3 +543,29 @@ fn inserted_hyperlinks_look_like_links() {
     s.execute("format.underline", &json!({})).unwrap();
     assert_eq!(s.execute("format.state", &json!({})).unwrap()["underline"], false);
 }
+
+/// Traditional Chinese prompts replace only the layout placeholders' text: the subtitle keeps its
+/// no-bullet, centred list style and the title its anchor.
+#[test]
+fn localized_prompts_keep_layout_formatting() {
+    let mut en = Session::new();
+    en.prefs.language = crate::Language::english;
+    en.execute("file.new", &json!({})).unwrap();
+    let mut zh = Session::new();
+    zh.prefs.language = crate::Language::traditional_chinese;
+    zh.execute("file.new", &json!({})).unwrap();
+    let (en, zh) = (&en.doc().unwrap().doc, &zh.doc().unwrap().doc);
+    let pairs = en.masters[0].layouts.iter().zip(&zh.masters[0].layouts).flat_map(|(a, b)| a.shapes.iter().zip(&b.shapes));
+    let mut checked = 0;
+    for (a, b) in pairs {
+        let Some(tb) = b.text.as_ref().filter(|_| b.ph.as_ref().is_some_and(|p| p.has_custom_prompt)) else { continue };
+        let ta = a.text.clone().unwrap_or_default();
+        assert_eq!(ta.list_style, tb.list_style, "{}", b.name);
+        assert_eq!(ta.body, tb.body, "{}", b.name);
+        let default = deckcraft_model::text::ParaProps::default();
+        assert_eq!(ta.paragraphs.first().map_or(&default, |p| &p.props), tb.paragraphs.first().map_or(&default, |p| &p.props), "{}", b.name);
+        assert!(!tb.text().is_ascii(), "{} is translated", b.name);
+        checked += 1;
+    }
+    assert!(checked > 5);
+}

@@ -27,7 +27,16 @@ fn localize_shape_prompt(shape: &mut deckcraft_model::Shape, lang: Language) {
     }
     let Some(text) = zh_prompt(ph.kind) else { return };
     ph.has_custom_prompt = true;
-    shape.text = Some(deckcraft_model::TextBody::from_text(text));
+    // Keep the placeholder's body and list styles (a subtitle has no bullet); swap only the text.
+    let mut body = shape.text.take().unwrap_or_default();
+    let mut para = deckcraft_model::text::Paragraph::new(text);
+    if let Some(first) = body.paragraphs.first() {
+        para.level = first.level;
+        para.props = first.props.clone();
+        para.end_props = first.end_props.clone();
+    }
+    body.paragraphs = vec![para];
+    shape.text = Some(body);
 }
 
 /// Custom prompts on the masters and layouts; slides inherit them (their placeholders stay empty,

@@ -200,6 +200,8 @@ pub struct SlideApp {
     queued_shots: Vec<(u64, f64, u32)>,
     pending_shots: Vec<(u64, Option<String>, Sender<ControlResponse>, f64)>,
     styled: bool,
+    /// The interface language the installed UI fonts were picked for.
+    fonts_language: Option<deckcraft_engine::Language>,
     restyle: bool,
     fonts_ready: bool,
     last_time: f64,
@@ -238,6 +240,7 @@ impl SlideApp {
             queued_shots: vec![],
             pending_shots: vec![],
             styled: false,
+            fonts_language: None,
             restyle: true,
             fonts_ready: false,
             last_time: 0.0,
@@ -532,6 +535,11 @@ impl SlideApp {
     /// Per-frame logic before layout: styles, control requests, screenshots, shortcuts.
     pub fn logic(&mut self, ctx: &egui::Context) {
         i18n::set_language(self.session.prefs.language);
+        if self.fonts_language != Some(self.session.prefs.language) {
+            // Each language brings its own UI faces; install them again when it changes.
+            self.fonts_language = Some(self.session.prefs.language);
+            self.styled = false;
+        }
         let scale = self.ui.ui_scale.clamp(0.5, 3.0);
         if (ctx.zoom_factor() - scale).abs() > 1e-3 {
             ctx.set_zoom_factor(scale);

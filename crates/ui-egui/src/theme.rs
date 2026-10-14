@@ -153,7 +153,34 @@ pub fn apply(ctx: &egui::Context, t: &Tokens) {
     });
 }
 
-/// UI fonts: Inter (from craft-fonts) when embedded, a Japanese UI face for CJK, then egui's.
+/// Installed families for the Traditional Chinese interface, best first. They are the user's own
+/// system fonts, found and read at run time like the slide renderer's system fallback, never
+/// bundled (AGENTS.md §1). The Japanese UI face lacks many Traditional Chinese characters.
+const TRADITIONAL_CHINESE_UI_FAMILIES: &[&str] = &["PingFang TC", "Heiti TC", "Microsoft JhengHei", "WenQuanYi Zen Hei", "WenQuanYi Micro Hei"];
+
+/// The first installed Traditional Chinese UI face (native only; the web build keeps the Japanese
+/// UI face).
+fn traditional_chinese_ui_font() -> Option<FontData> {
+    if cfg!(target_arch = "wasm32") {
+        return None;
+    }
+    let db = deckcraft_fonts::FontDb::global();
+    TRADITIONAL_CHINESE_UI_FAMILIES.iter().find_map(|fam| {
+        if !db.has_family(fam) {
+            return None;
+        }
+        let face = db.face(fam, "Regular");
+        // `face` falls back to other families; take it only if it is this one and covers Chinese.
+        (face.family.eq_ignore_ascii_case(fam) && face.covers('體') && face.covers('簡')).then(|| {
+            let mut data = FontData::from_owned(face.data().to_vec());
+            data.index = face.index();
+            data
+        })
+    })
+}
+
+/// UI fonts: Inter (from craft-fonts) when embedded, then for the Traditional Chinese interface an
+/// installed Chinese face, a Japanese UI face for other CJK, then egui's.
 pub fn install_fonts(ctx: &egui::Context) {
     let mut defs = FontDefinitions::default();
     let mut names = vec![];
@@ -168,7 +195,16 @@ pub fn install_fonts(ctx: &egui::Context) {
         defs.font_data.insert(name.clone(), std::sync::Arc::new(FontData::from_static(f.bytes)));
         names.push((f.family, f.style, name));
     }
-    let regular: Vec<String> = names.iter().filter(|(fam, st, _)| !(*fam == "Inter" && *st != "Regular")).map(|(_, _, n)| n.clone()).collect();
+    let mut regular: Vec<String> = names.iter().filter(|(fam, st, _)| !(*fam == "Inter" && *st != "Regular")).map(|(_, _, n)| n.clone()).collect();
+    if crate::i18n::language() == deckcraft_engine::Language::traditional_chinese
+        && let Some(data) = traditional_chinese_ui_font()
+    {
+        let name = "system-traditional-chinese-ui".to_string();
+        defs.font_data.insert(name.clone(), std::sync::Arc::new(data));
+        // After Inter (Latin keeps Inter), before the Japanese face.
+        let at = regular.iter().take_while(|n| n.contains("-Inter-")).count();
+        regular.insert(at, name);
+    }
     if let Some(list) = defs.families.get_mut(&FontFamily::Proportional) {
         for (k, n) in regular.iter().enumerate() {
             list.insert(k, n.clone());
